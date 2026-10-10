@@ -32,29 +32,19 @@ The application also breaks complex questions into smaller research questions, s
 ## Application Screenshots
 
 ### Main Interface
-<img width="1920" height="912" alt="main-interface" src="https://github.com/user-attachments/assets/5b363f58-bfff-4e27-a6ec-5a5f8d8f98b7" />
-
-
-
+![Main Interface](screenshots/main-interface.png)
 
 ### Research Answer
-
-<img width="1661" height="907" alt="research-answer" src="https://github.com/user-attachments/assets/112e1bb5-e5b4-4035-810f-8e90875ce07c" />
-
+![Research Answer](screenshots/research-answer.png)
 
 ### Source Cards and Quality Scores
-
-<img width="1891" height="902" alt="source-cards" src="https://github.com/user-attachments/assets/b939e356-c031-413f-8752-f4209c3c3212" />
-
+![Source Cards](screenshots/source-cards.png)
 
 ### Agent Activity
-
-<img width="1582" height="877" alt="agent-activity" src="https://github.com/user-attachments/assets/23606a8c-55ab-452a-8332-2b919ea5e7a8" />
-
+![Agent Activity](screenshots/agent-activity.png)
 
 ### Research Modes
-
-<img width="1401" height="833" alt="research-modes" src="https://github.com/user-attachments/assets/6f596cb5-1a81-4f85-87ad-f567b9bf144a" />
+![Research Modes](screenshots/research-modes.png)
 
 ## Technology Stack
 

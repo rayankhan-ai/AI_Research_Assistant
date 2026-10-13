@@ -127,81 +127,65 @@ function App() {
     setSources([]);
 
 
-    try {
+    
+try {
+  // Read the backend URL from the frontend environment file.
+  // Use the local backend URL if the environment variable is unavailable.
+  const API_URL =
+    import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
-      // Send request to FastAPI
-      const response = await fetch(
-        "http://127.0.0.1:8000/research",
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json"
-          },
-
-          body: JSON.stringify({
-            query: query
-          })
-        }
-      );
-
-
-      // Convert response to JSON
-      const data = await response.json();
-
-
-      // Check backend response
-      if (!response.ok) {
-
-        throw new Error(
-          data.detail || "Research request failed."
-        );
-      }
-
-
-      // Save answer
-      setAnswer(data.answer);
-
-      // Save sources
-      setSources(data.sources || []);
-
-      setActivity(data.activity || []);
-
-      setReport(data.report || "");
-
-      // ------------------------------------------------
-      // CREATE HISTORY ITEM
-      // ------------------------------------------------
-
-      const historyItem = {
-
-        // Create a unique ID
-        id: Date.now(),
-
-        // Save the research question
-        query: query,
-
-        // Save the AI answer
-        answer: data.answer,
-
-        // Save the sources
-        sources: data.sources || [],
-
-        // Save the date/time
-        date: new Date().toLocaleString()
-      };
-
-
-      // Add new research to the beginning of history
-      setHistory((previousHistory) => [
-
-        historyItem,
-
-        ...previousHistory
-
-      ]);
-
+  // Send the research request to the FastAPI backend.
+  const response = await fetch(
+    `${API_URL.replace(/\/+$/, "")}/research`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        query: query
+      })
     }
+  );
+
+  // Convert the backend response to JSON.
+  const data = await response.json();
+
+  // Check whether the backend returned an error.
+  if (!response.ok) {
+    throw new Error(
+      data.detail || "Research request failed."
+    );
+  }
+
+  // Save the research answer.
+  setAnswer(data.answer);
+
+  // Save the research sources.
+  setSources(data.sources || []);
+
+  // Save agent activity information.
+  setActivity(data.activity || []);
+
+  // Save the downloadable report content.
+  setReport(data.report || "");
+
+  // Create a new research history item.
+  const historyItem = {
+    id: Date.now(),
+    query: query,
+    answer: data.answer,
+    sources: data.sources || [],
+    date: new Date().toLocaleString()
+  };
+
+  // Add the new research item to the beginning of history.
+  setHistory((previousHistory) => [
+    historyItem,
+    ...previousHistory
+  ]);
+}
+
 
 
     catch (error) {

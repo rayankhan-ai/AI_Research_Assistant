@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from tavily import TavilyClient
 
 from langchain_ollama import ChatOllama
+from langchain_groq import ChatGroq
 
 
 # ============================================
@@ -32,6 +33,13 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL")
 
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+GROQ_MODEL = os.getenv(
+    "GROQ_MODEL",
+    "openai/gpt-oss-20b"
+)
+
 
 # ============================================
 # CHECK ENVIRONMENT VARIABLES
@@ -42,9 +50,14 @@ if not TAVILY_API_KEY:
         "TAVILY_API_KEY is missing from .env"
     )
 
-if not OLLAMA_MODEL:
+if not GROQ_API_KEY:
     raise ValueError(
-        "OLLAMA_MODEL is missing from .env"
+        "GROQ_API_KEY is missing from .env"
+    )
+
+if not GROQ_MODEL:
+    raise ValueError(
+        "GROQ_MODEL is missing from .env"
     )
 
 
@@ -56,8 +69,9 @@ tavily_client = TavilyClient(
     api_key=TAVILY_API_KEY
 )
 
-llm = ChatOllama(
-    model=OLLAMA_MODEL,
+llm = ChatGroq(
+    model=GROQ_MODEL,
+    api_key=GROQ_API_KEY,
     temperature=0.2
 )
 
@@ -74,16 +88,36 @@ app = FastAPI(
 
 
 # ============================================
-# CORS
+# CORS CONFIGURATION
 # ============================================
 
+# Read the deployed frontend URL from the environment.
+# The value will be configured in Render later.
+FRONTEND_URL = os.getenv(
+    "FRONTEND_URL",
+    ""
+).rstrip("/")
+
+
+# Allow the local frontend during development.
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+]
+
+
+# Add the deployed frontend URL when configured.
+if FRONTEND_URL:
+    allowed_origins.append(
+        FRONTEND_URL
+    )
+
+
+# Configure CORS middleware.
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ],
+    allow_origins=allowed_origins,
 
     allow_credentials=True,
 
@@ -564,62 +598,78 @@ def generate_research_answer(
     research_context,
     mode
 ):
+    """
+    Generate the final research answer using Groq.
+
+    The research context is limited to reduce token usage
+    and avoid exceeding the model's request limits.
+    """
+
+    # ----------------------------------------
+    # GET INSTRUCTIONS FOR THE SELECTED MODE
+    # ----------------------------------------
 
     mode_instructions = get_mode_instructions(
         mode
     )
 
+    # ----------------------------------------
+    # LIMIT RESEARCH CONTEXT
+    # ----------------------------------------
+
+    # Keep the research context within a reasonable size.
+    # This helps prevent requests from exceeding Groq limits.
+    MAX_CONTEXT_CHARACTERS = 12000
+
+    if len(research_context) > MAX_CONTEXT_CHARACTERS:
+        research_context = (
+            research_context[:MAX_CONTEXT_CHARACTERS]
+        )
+
+    # ----------------------------------------
+    # BUILD THE PROMPT
+    # ----------------------------------------
 
     prompt = f"""
 You are an AI Research Assistant.
 
-The original user question is:
-
+Original user question:
 {query}
 
-
-The system performed multi-step research.
-
 Research findings:
-
 {research_context}
 
-
 Research mode:
-
 {mode}
 
-
 Instructions:
-
 {mode_instructions}
-
 
 IMPORTANT RULES:
 
-1. Use the research findings as primary
-   evidence.
-
+1. Use the research findings as your primary evidence.
 2. Do not invent facts.
-
-3. Combine findings from different
-   research questions.
-
+3. Combine findings from different research questions.
 4. Mention uncertainty when appropriate.
-
 5. Use Markdown formatting.
-
 6. Answer the original question.
-
+7. Provide a concise but informative response.
+8. Preserve relevant source URLs included in the findings.
 
 Now produce the final research answer.
 """
 
+    # ----------------------------------------
+    # GENERATE ANSWER USING GROQ
+    # ----------------------------------------
 
     response = llm.invoke(
         prompt
     )
 
+    # ----------------------------------------
+    # RETURN THE ANSWER
+    # ----------------------------------------
 
     return response.content
 
